@@ -56,7 +56,7 @@ for i in range(len(sys.argv) - 1):
 for s in states:
     print("Configuring device")
     libmetawear.mbl_mw_settings_set_connection_parameters(s.device.board, 7.5, 7.5, 0, 6000)
-    sleep(1.5)
+    sleep(2.5)
 
     e = Event()
 
