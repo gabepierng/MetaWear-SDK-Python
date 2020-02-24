@@ -20,7 +20,7 @@ while selection == -1:
     BleScanner.set_handler(handler)
     BleScanner.start()
 
-    sleep(10.0)
+    sleep(5.0)
     BleScanner.stop()
 
     i = 0
