@@ -58,6 +58,13 @@ for s in states:
     libmetawear.mbl_mw_settings_set_connection_parameters(s.device.board, 7.5, 7.5, 0, 6000)
     sleep(2.5)
 
+    libmetawear.mbl_mw_gyro_bmi160_set_odr(s.device.board, MBL_MW_GYRO_BMI160_ODR_100Hz)
+    libmetawear.mbl_mw_gyro_bmi160_set_range(s.device.board, MBL_MW_GYRO_BMI160_RANGE_1000dps)
+    libmetawear.mbl_mw_gyro_bmi160_write_config(s.device.board)
+
+    # signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(s.device.board)
+    signal = libmetawear.mbl_mw_gyro_bmi160_get_rotation_data_signal(s.device.board)
+
     e = Event()
 
     def processor_created(context, pointer):
@@ -70,12 +77,6 @@ for s in states:
     # libmetawear.mbl_mw_acc_set_range(s.device.board, 16.0)
     # libmetawear.mbl_mw_acc_write_acceleration_config(s.device.board)
 
-    libmetawear.mbl_mw_gyro_bmi160_set_odr(s.device.board, MBL_MW_GYRO_BMI160_ODR_100Hz)
-    libmetawear.mbl_mw_gyro_bmi160_set_range(s.device.board, MBL_MW_GYRO_BMI160_RANGE_1000dps)
-    libmetawear.mbl_mw_gyro_bmi160_write_config(s.device.board)
-
-    # signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(s.device.board)
-    signal = libmetawear.mbl_mw_gyro_bmi160_get_rotation_data_signal(s.device.board)
     libmetawear.mbl_mw_dataprocessor_accounter_create(signal, None, fn_wrapper)
     e.wait()
 
