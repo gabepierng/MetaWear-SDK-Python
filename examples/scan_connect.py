@@ -23,6 +23,7 @@ while selection == -1:
     sleep(5.0)
     BleScanner.stop()
 
+    # print(devices)
     i = 0
     for address, name in six.iteritems(devices):
         print("[%d] %s (%s)" % (i, address, name))

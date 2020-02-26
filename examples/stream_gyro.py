@@ -86,7 +86,7 @@ for s in states:
     try:
         libmetawear.mbl_mw_datasignal_subscribe(s.processor, None, s.callback)
     except OSError:
-        raise OSError("Processor pointer unassignable...")
+        raise OSError("Processor pointer unassignable...reconnect")
     except:
         raise ValueError("Unexpected Error...")
 

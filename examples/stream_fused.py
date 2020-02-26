@@ -1,12 +1,17 @@
 # usage: python data_fuser.py [mac1] [mac2] ... [mac(n)]
 from __future__ import print_function
 from ctypes import c_void_p, cast, POINTER
-from mbientlab.metawear import MetaWear, libmetawear, parse_value, cbindings, create_voidp
+from mbientlab.metawear import MetaWear, libmetawear, parse_value, create_voidp
+from mbientlab.metawear import cbindings as metacbindings
+from mbientlab.warble import *
 from time import sleep
 from threading import Event
 from sys import argv
 import numpy as np
 import os
+
+import platform
+import six
 
 # Available output data rates on the BMI160 gyro
 MBL_MW_GYRO_BMI160_ODR_25Hz= 6
@@ -32,7 +37,7 @@ states = []
 class State:
     def __init__(self, device):
         self.device = device
-        self.callback = cbindings.FnVoid_VoidP_DataP(self.data_handler)
+        self.callback = metacbindings.FnVoid_VoidP_DataP(self.data_handler)
         self.processor = None
         self.sensor_data = []
         self.samples = 0
@@ -54,7 +59,7 @@ class State:
         def processor_created(context, pointer):
             self.processor = pointer
             e.set()
-        fn_wrapper = cbindings.FnVoid_VoidP_VoidP(processor_created)
+        fn_wrapper = metacbindings.FnVoid_VoidP_VoidP(processor_created)
 
         # set accelerometer to 100Hz sampling rate and range to +/- 16 g's
         libmetawear.mbl_mw_acc_set_odr(s.device.board, 100.0)
@@ -87,7 +92,51 @@ class State:
 
         libmetawear.mbl_mw_gyro_bmi160_start(self.device.board)
         libmetawear.mbl_mw_acc_start(self.device.board)
-        
+'''
+def scan_for_devices():
+    # selection = -1
+    devices = None
+
+    # while selection == -1:
+    print("scanning for devices...")
+    devices = {}
+    def handler(result):
+        devices[result.mac] = result.name
+
+    BleScanner.set_handler(handler)
+    BleScanner.start()
+
+    sleep(5.0)
+    BleScanner.stop()
+    # i = 0
+    # for address, name in six.iteritems(devices):
+    #     print("[%d] %s (%s)" % (i, address, name))
+    #     i+= 1
+
+    return devices
+        # didFind = 0
+        # for address, name in six.iteritems(devices):
+        #     if(address == )
+
+        # msg = "Select your device (-1 to rescan): "
+        # selection = int(raw_input(msg) if platform.python_version_tuple()[0] == '2' else input(msg))
+
+# devicesToConnect = argv[1:]
+
+# while(len(devicesToConnect) > 0):
+#     devicesFound = scan_for_devices()
+
+#     for i in range(len(devicesToConnect)):
+#         if(devicesToConnect[i] in devicesFound):
+#             # print("Found device, [%s]" % (argv[i + 1]))
+#             d = MetaWear(devicesToConnect[i])
+#             d.connect()
+#             print("Connected to " + d.address)
+#             states.append(State(d))
+#             devicesToConnect.remove(devicesToConnect[i])
+#         else:
+#             print("Did not find device [%s]" % (argv[i + 1]))
+'''
 for i in range(len(argv) - 1):
     d = MetaWear(argv[i + 1])
     d.connect()
@@ -98,10 +147,14 @@ for s in states:
     print("Configuring %s" % (s.device.address))
     s.setup()
 
+sleep(0.5)
+input("Press enter to start streaming...")
+
 for s in states:
     s.start()
 
-sleep(20.0)
+# sleep(20.0)
+input("Press enter to stop streaming...")
 
 print("Resetting devices\n")
 events = []
@@ -118,6 +171,7 @@ for e in events:
 
 trial_name = input("Please enter trial name: ")
 
+i = 0
 for s in states:
     s.sensor_data = np.asarray(s.sensor_data, dtype=np.float64)
     
@@ -125,7 +179,7 @@ for s in states:
 
     s.sensor_data[:,1] = [(x - timeStart) / 1000 for x in s.sensor_data[:,0]]
 
-    filename = '../TestData/fused_data_' + trial_name + '.csv'
+    filename = '../TestData/fused_data_' + trial_name + str(i) '.csv'
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, 'w') as f:
