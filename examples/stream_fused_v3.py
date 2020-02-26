@@ -105,7 +105,7 @@ for s in states:
 for s in states:
     s.start()
 
-sleep(10.0)
+sleep(5.0)
 
 print("Resetting devices\n")
 events = []
@@ -125,7 +125,7 @@ trial_name = input("Please enter trial name: ")
 for s in states:
     s.sensor_data = np.asarray(s.sensor_data, dtype=np.float64)
     #print(s.sensor_data)
-    devices = ['','E4:96:C7:F3:F1:7F','F2:35:67:4C:36:32','DC:37:AF:FC:F6:18','F1:80:E8:30:01:89']
+    devices = ['','E4:96:C7:F3:F1:7F','F2:35:67:4C:36:32','DC:37:AF:FC:F6:18','F1:80:E8:30:01:89','CC:36:9E:B6:56:F5']
 
     timeStart = s.sensor_data[0,0]
 
