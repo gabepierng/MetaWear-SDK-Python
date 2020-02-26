@@ -46,7 +46,7 @@ class State:
         values = parse_value(data, n_elem = 2)
         # f.write('%.4f,%.4f,%.4f\n' % (values[1].x, values[1].y, values[1].z))
         self.sensor_data.append([data.contents.epoch, 0, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z])
-        print("time: %s\tacc: (%.4f,%.4f,%.4f),\tgyro; (%.4f,%.4f,%.4f)" % (data.contents.epoch, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z))
+        # print("time: %s\tacc: (%.4f,%.4f,%.4f),\tgyro; (%.4f,%.4f,%.4f)" % (data.contents.epoch, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z))
 
         self.samples += 1
 
@@ -179,7 +179,7 @@ for s in states:
 
     s.sensor_data[:,1] = [(x - timeStart) / 1000 for x in s.sensor_data[:,0]]
 
-    filename = '../TestData/fused_data_' + trial_name + str(i) '.csv'
+    filename = '../TestData/strfused_' + trial_name + str(i) + '.csv'
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, 'w') as f:
