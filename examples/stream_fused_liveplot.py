@@ -29,11 +29,6 @@ MBL_MW_GYRO_BMI160_RANGE_125dps= 4       # +/-125 degrees per second
 
 states = []
 
-#fig = plt.figure()
-#ax1 = fig.add_subplot(1,1,1)
-
-# f = open('validateGyro.csv', 'w')
-
 #acc_rate = int(input("Please enter accelerometer sampling rate: "))
 #gyro_rate = int(input("Please enter gyro sampling rate: "))
 
@@ -45,18 +40,20 @@ class State:
         self.sensor_data = []
         self.samples = 0
         self.fig = plt.figure()
-        self.ax1 = self.fig.add_subplot(1,1,1)
-        self.xs = []
-        self.ys = []
+        # self.ax1 = self.fig.add_subplot(1,1,1)
+        self.ax1 = plt.axes(xlim=(0, 1), ylim=(-150, 300))
+        self.IMUData, = self.ax1.plot([], [], lw = 3)
+        self.xs = np.linspace(0, 1, 200)    # x seconds of data where x = 200 * (1/sampling rate)
+        self.ys = [0] * 200
 			   
     def data_handler(self, ctx, data):
         values = parse_value(data, n_elem = 2)
-        # f.write('%.4f,%.4f,%.4f\n' % (values[1].x, values[1].y, values[1].z))
 
         self.sensor_data.append([data.contents.epoch, 0, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z])
-        self.xs.append(data.contents.epoch)
-        self.ys.append(values[0].x)
-        #print("%s \ttime: %s\tacc: (%.4f,%.4f,%.4f),\tgyro; (%.4f,%.4f,%.4f)" % (self.device.address, data.contents.epoch, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z))
+        # self.xs.pop(0)
+        # self.xs.append(data.contents.epoch)
+        self.ys.pop(0)
+        self.ys.append(values[1].z)
 
         self.samples += 1
 
@@ -102,14 +99,13 @@ class State:
         libmetawear.mbl_mw_gyro_bmi160_start(self.device.board)
         libmetawear.mbl_mw_acc_start(self.device.board)
 
-    def ani_update(i,self):
-        self.xs = self.xs[-20:]
-        self.ys = self.ys[-20:]
-        self.ax1.clear()
-        self.ax1.plot(self.xs,self.ys)
+    def ani_update(self, i):
+        self.IMUData.set_data(self.xs, self.ys)
+
+        return self.IMUData,
 
     def animate(self):
-        anim = animation.FuncAnimation(self.fig, self.ani_update, frames=4, interval=20, blit=True)
+        anim = animation.FuncAnimation(self.fig, self.ani_update, interval=50)#, blit=True)
         plt.show()
 
 for i in range(len(argv) - 1):
@@ -128,7 +124,7 @@ for s in states:
     #ani = animation.FuncAnimation(fig, s.animate, interval =100)
     #plt.show()
 
-sleep(3.0)
+sleep(1.0)
 
 print("Resetting devices\n")
 events = []
@@ -153,7 +149,7 @@ for s in states:
 
     s.sensor_data[:,1] = [(x - timeStart) / 1000 for x in s.sensor_data[:,0]]
 
-    filename = '../TestData/fused_data_' + trial_name + '_' + str(devices.index(s.device.address)) + '.csv'
+    filename = '../TestData/' + trial_name + '_' + str(devices.index(s.device.address)) + '.csv'
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, 'w') as f:
