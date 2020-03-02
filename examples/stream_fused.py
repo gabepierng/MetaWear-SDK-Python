@@ -1,12 +1,17 @@
 # usage: python data_fuser.py [mac1] [mac2] ... [mac(n)]
 from __future__ import print_function
 from ctypes import c_void_p, cast, POINTER
-from mbientlab.metawear import MetaWear, libmetawear, parse_value, cbindings, create_voidp
+from mbientlab.metawear import MetaWear, libmetawear, parse_value, create_voidp
+from mbientlab.metawear import cbindings as metacbindings
+from mbientlab.warble import *
 from time import sleep
 from threading import Event
 from sys import argv
 import numpy as np
 import os
+
+import platform
+import six
 
 # Available output data rates on the BMI160 gyro
 MBL_MW_GYRO_BMI160_ODR_25Hz= 6
@@ -32,7 +37,7 @@ states = []
 class State:
     def __init__(self, device):
         self.device = device
-        self.callback = cbindings.FnVoid_VoidP_DataP(self.data_handler)
+        self.callback = metacbindings.FnVoid_VoidP_DataP(self.data_handler)
         self.processor = None
         self.sensor_data = []
         self.samples = 0
@@ -41,7 +46,7 @@ class State:
         values = parse_value(data, n_elem = 2)
         # f.write('%.4f,%.4f,%.4f\n' % (values[1].x, values[1].y, values[1].z))
         self.sensor_data.append([data.contents.epoch, 0, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z])
-        print("time: %s\tacc: (%.4f,%.4f,%.4f),\tgyro; (%.4f,%.4f,%.4f)" % (data.contents.epoch, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z))
+        # print("time: %s\tacc: (%.4f,%.4f,%.4f),\tgyro; (%.4f,%.4f,%.4f)" % (data.contents.epoch, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z))
 
         self.samples += 1
 
@@ -54,7 +59,7 @@ class State:
         def processor_created(context, pointer):
             self.processor = pointer
             e.set()
-        fn_wrapper = cbindings.FnVoid_VoidP_VoidP(processor_created)
+        fn_wrapper = metacbindings.FnVoid_VoidP_VoidP(processor_created)
 
         # set accelerometer to 100Hz sampling rate and range to +/- 16 g's
         libmetawear.mbl_mw_acc_set_odr(s.device.board, 100.0)
@@ -87,7 +92,8 @@ class State:
 
         libmetawear.mbl_mw_gyro_bmi160_start(self.device.board)
         libmetawear.mbl_mw_acc_start(self.device.board)
-        
+
+
 for i in range(len(argv) - 1):
     d = MetaWear(argv[i + 1])
     d.connect()
@@ -98,10 +104,14 @@ for s in states:
     print("Configuring %s" % (s.device.address))
     s.setup()
 
+sleep(0.5)
+input("Press enter to start streaming...")
+
 for s in states:
     s.start()
 
-sleep(20.0)
+# sleep(20.0)
+input("Press enter to stop streaming...")
 
 print("Resetting devices\n")
 events = []
@@ -118,6 +128,7 @@ for e in events:
 
 trial_name = input("Please enter trial name: ")
 
+i = 0
 for s in states:
     s.sensor_data = np.asarray(s.sensor_data, dtype=np.float64)
     
@@ -125,7 +136,7 @@ for s in states:
 
     s.sensor_data[:,1] = [(x - timeStart) / 1000 for x in s.sensor_data[:,0]]
 
-    filename = '../TestData/fused_data_' + trial_name + '.csv'
+    filename = '../TestData/strfused_' + trial_name + str(i) + '.csv'
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     with open(filename, 'w') as f:
@@ -134,6 +145,7 @@ for s in states:
             f.write('%d,%.3f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]))
 
     print("Data saved to \'" + filename + "\'\n")
+    i += 1
 
 print("Total Samples Received")
 for s in states:

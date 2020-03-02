@@ -6,3 +6,4 @@ mbientlab/metawear/cbindings.py
 *.pyc
 .metawear
 /TestData/
+*.csv

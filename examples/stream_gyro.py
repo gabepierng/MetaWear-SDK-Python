@@ -58,34 +58,42 @@ for s in states:
     libmetawear.mbl_mw_settings_set_connection_parameters(s.device.board, 7.5, 7.5, 0, 6000)
     sleep(2.5)
 
-    e = Event()
-
-    def processor_created(context, pointer):
-        print(pointer)
-        s.processor = pointer
-        e.set()
-    fn_wrapper = FnVoid_VoidP_VoidP(processor_created)
-
-    # libmetawear.mbl_mw_acc_set_odr(s.device.board, 100.0)
-    # libmetawear.mbl_mw_acc_set_range(s.device.board, 16.0)
-    # libmetawear.mbl_mw_acc_write_acceleration_config(s.device.board)
-
     libmetawear.mbl_mw_gyro_bmi160_set_odr(s.device.board, MBL_MW_GYRO_BMI160_ODR_100Hz)
     libmetawear.mbl_mw_gyro_bmi160_set_range(s.device.board, MBL_MW_GYRO_BMI160_RANGE_1000dps)
     libmetawear.mbl_mw_gyro_bmi160_write_config(s.device.board)
 
     # signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(s.device.board)
     signal = libmetawear.mbl_mw_gyro_bmi160_get_rotation_data_signal(s.device.board)
+    s.processor = None
+
+    # print("Processor: ", s.processor)
+    def processor_created(context, pointer):
+        s.processor = pointer
+        e.set()
+
+    # while(s.processor is None):
+    print("Trying to create processor...")
+    e = Event()
+
+    fn_wrapper = FnVoid_VoidP_VoidP(processor_created)
+
     libmetawear.mbl_mw_dataprocessor_accounter_create(signal, None, fn_wrapper)
     e.wait()
 
+    input("Press enter to start streaming...")
+
     # libmetawear.mbl_mw_datasignal_subscribe(signal, None, s.callback)  
-    libmetawear.mbl_mw_datasignal_subscribe(s.processor, None, s.callback)
+    try:
+        libmetawear.mbl_mw_datasignal_subscribe(s.processor, None, s.callback)
+    except OSError:
+        raise OSError("Processor pointer unassignable...reconnect")
+    except:
+        raise ValueError("Unexpected Error...")
 
     libmetawear.mbl_mw_gyro_bmi160_enable_rotation_sampling(s.device.board)
     libmetawear.mbl_mw_gyro_bmi160_start(s.device.board)
 
-sleep(10.0)
+input("Press enter to stop streaming...")
 
 # for s in states:
 #     libmetawear.mbl_mw_acc_stop(s.device.board)
