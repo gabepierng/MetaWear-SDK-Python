@@ -4,7 +4,7 @@ from ctypes import c_void_p, cast, POINTER
 from mbientlab.metawear import MetaWear, libmetawear, parse_value, cbindings, create_voidp
 from time import sleep
 from threading import Event
-from sys import argv
+from sys import argv, exit
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -99,23 +99,36 @@ class State:
 
 
 def animate(states):
+    num_states = len(states)
     fig = plt.figure()
-    ax1 = fig.add_subplot(211, xlim=(0,1), ylim=(-150,300))
-    ax2 = fig.add_subplot(212, xlim=(0,1), ylim=(-150,300))
+    axn = []
+    IMUData = [0] * num_states
 
-    IMUData1, = ax1.plot([], [], lw = 3)
-    IMUData2, = ax2.plot([], [], lw = 3)
+    for i in range(num_states):
+        plotNum = 100*num_states + 10*1 + i + 1
+        axn.append(fig.add_subplot(plotNum , xlim = (0,1), ylim = (-300, 150)))
+        IMUData[i], = axn[i].plot([], [], lw = 3)
+
+    # print("Created subplots")
+    # exit()
+
+    # ax1 = fig.add_subplot(211, xlim=(0,1), ylim=(-150,300))
+    # ax2 = fig.add_subplot(212, xlim=(0,1), ylim=(-150,300))
+
+    # IMUData1, = ax1.plot([], [], lw = 3)
+    # IMUData2, = ax2.plot([], [], lw = 3)
 
     def ani_update(i):
-        j = 0
-        for s in states:
-            if (j==0):
-                IMUData1.set_data(s.xs,s.ys)
+        # j = 0
+        for idx, s in enumerate(states):
+            IMUData[idx].set_data(s.xs, s.ys)
+            # if (j==0):
+            #     IMUData1.set_data(s.xs,s.ys)
 
-            elif(j==1):
-                IMUData2.set_data(s.xs,s.ys)
+            # # elif(j==1):
+            #     IMUData2.set_data(s.xs,s.ys)
 
-            j += 1
+            # j += 1
 
        # return IMUData1
 
