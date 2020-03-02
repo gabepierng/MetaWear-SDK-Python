@@ -92,51 +92,8 @@ class State:
 
         libmetawear.mbl_mw_gyro_bmi160_start(self.device.board)
         libmetawear.mbl_mw_acc_start(self.device.board)
-'''
-def scan_for_devices():
-    # selection = -1
-    devices = None
 
-    # while selection == -1:
-    print("scanning for devices...")
-    devices = {}
-    def handler(result):
-        devices[result.mac] = result.name
 
-    BleScanner.set_handler(handler)
-    BleScanner.start()
-
-    sleep(5.0)
-    BleScanner.stop()
-    # i = 0
-    # for address, name in six.iteritems(devices):
-    #     print("[%d] %s (%s)" % (i, address, name))
-    #     i+= 1
-
-    return devices
-        # didFind = 0
-        # for address, name in six.iteritems(devices):
-        #     if(address == )
-
-        # msg = "Select your device (-1 to rescan): "
-        # selection = int(raw_input(msg) if platform.python_version_tuple()[0] == '2' else input(msg))
-
-# devicesToConnect = argv[1:]
-
-# while(len(devicesToConnect) > 0):
-#     devicesFound = scan_for_devices()
-
-#     for i in range(len(devicesToConnect)):
-#         if(devicesToConnect[i] in devicesFound):
-#             # print("Found device, [%s]" % (argv[i + 1]))
-#             d = MetaWear(devicesToConnect[i])
-#             d.connect()
-#             print("Connected to " + d.address)
-#             states.append(State(d))
-#             devicesToConnect.remove(devicesToConnect[i])
-#         else:
-#             print("Did not find device [%s]" % (argv[i + 1]))
-'''
 for i in range(len(argv) - 1):
     d = MetaWear(argv[i + 1])
     d.connect()
