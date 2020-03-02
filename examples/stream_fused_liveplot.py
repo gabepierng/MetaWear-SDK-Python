@@ -40,11 +40,7 @@ class State:
         self.processor = None
         self.sensor_data = []
         self.samples = 0
-        #self.fig = plt.figure()
-
-        #self.ax1 = plt.axes(xlim=(0, 1), ylim=(-150, 300))
-        #self.IMUData, = self.ax1.plot([], [], lw = 3)
-
+   
         self.xs = np.linspace(0, 1, 200)    # x seconds of data where x = 200 * (1/sampling rate)
         self.ys = [0] * 200
 			   
@@ -111,15 +107,15 @@ def animate(states):
     IMUData2, = ax2.plot([], [], lw = 3)
 
     def ani_update(i):
-        i = 0
+        j = 0
         for s in states:
-            if (i==0):
+            if (j==0):
                 IMUData1.set_data(s.xs,s.ys)
 
-            elif(i==1):
+            elif(j==1):
                 IMUData2.set_data(s.xs,s.ys)
 
-            i += 1
+            j += 1
 
        # return IMUData1
 
@@ -142,10 +138,7 @@ for s in states:
 
 animate(states)
 
-    #ani = animation.FuncAnimation(fig, s.animate, interval =100)
-    #plt.show()
-
-sleep(10.0)
+sleep(5.0)
 
 
 print("Resetting devices\n")
@@ -164,7 +157,6 @@ trial_name = input("Please enter trial name: ")
 
 for s in states:
     s.sensor_data = np.asarray(s.sensor_data, dtype=np.float64)
-    #print(s.sensor_data)
     devices = ['','E4:96:C7:F3:F1:7F','F2:35:67:4C:36:32','DC:37:AF:FC:F6:18','F1:80:E8:30:01:89','CC:36:9E:B6:56:F5','F9:DC:A1:F5:45:01']
 
     timeStart = s.sensor_data[0,1]
