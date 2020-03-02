@@ -32,6 +32,7 @@ states = []
 #acc_rate = int(input("Please enter accelerometer sampling rate: "))
 #gyro_rate = int(input("Please enter gyro sampling rate: "))
 
+
 class State:
     def __init__(self, device):
         self.device = device
@@ -39,10 +40,11 @@ class State:
         self.processor = None
         self.sensor_data = []
         self.samples = 0
-        self.fig = plt.figure()
-        # self.ax1 = self.fig.add_subplot(1,1,1)
-        self.ax1 = plt.axes(xlim=(0, 1), ylim=(-150, 300))
-        self.IMUData, = self.ax1.plot([], [], lw = 3)
+        #self.fig = plt.figure()
+
+        #self.ax1 = plt.axes(xlim=(0, 1), ylim=(-150, 300))
+        #self.IMUData, = self.ax1.plot([], [], lw = 3)
+
         self.xs = np.linspace(0, 1, 200)    # x seconds of data where x = 200 * (1/sampling rate)
         self.ys = [0] * 200
 			   
@@ -99,14 +101,30 @@ class State:
         libmetawear.mbl_mw_gyro_bmi160_start(self.device.board)
         libmetawear.mbl_mw_acc_start(self.device.board)
 
-    def ani_update(self, i):
-        self.IMUData.set_data(self.xs, self.ys)
 
-        return self.IMUData,
+def animate(states):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(211, xlim=(0,1), ylim=(-150,300))
+    ax2 = fig.add_subplot(212, xlim=(0,1), ylim=(-150,300))
 
-    def animate(self):
-        anim = animation.FuncAnimation(self.fig, self.ani_update, interval=50)#, blit=True)
-        plt.show()
+    IMUData1, = ax1.plot([], [], lw = 3)
+    IMUData2, = ax2.plot([], [], lw = 3)
+
+    def ani_update(i):
+        i = 0
+        for s in states:
+            if (i==0):
+                IMUData1.set_data(s.xs,s.ys)
+
+            elif(i==1):
+                IMUData2.set_data(s.xs,s.ys)
+
+            i += 1
+
+       # return IMUData1
+
+    anim = animation.FuncAnimation(fig, ani_update, interval=50)
+    plt.show()
 
 for i in range(len(argv) - 1):
     d = MetaWear(argv[i + 1])
@@ -118,13 +136,17 @@ for s in states:
     print("Configuring %s" % (s.device.address))
     s.setup()
 
+
 for s in states:
     s.start()
-    s.animate()
+
+animate(states)
+
     #ani = animation.FuncAnimation(fig, s.animate, interval =100)
     #plt.show()
 
-sleep(1.0)
+sleep(10.0)
+
 
 print("Resetting devices\n")
 events = []
@@ -143,7 +165,7 @@ trial_name = input("Please enter trial name: ")
 for s in states:
     s.sensor_data = np.asarray(s.sensor_data, dtype=np.float64)
     #print(s.sensor_data)
-    devices = ['','E4:96:C7:F3:F1:7F','F2:35:67:4C:36:32','DC:37:AF:FC:F6:18','F1:80:E8:30:01:89','CC:36:9E:B6:56:F5']
+    devices = ['','E4:96:C7:F3:F1:7F','F2:35:67:4C:36:32','DC:37:AF:FC:F6:18','F1:80:E8:30:01:89','CC:36:9E:B6:56:F5','F9:DC:A1:F5:45:01']
 
     timeStart = s.sensor_data[0,1]
 
