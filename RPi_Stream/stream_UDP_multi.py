@@ -48,19 +48,9 @@ class State:
         self.samples = 0
 
         # assign unique port from ports list based on device address's index in macIDs list
-        self.UDP_PORT = [ports[i] for i, val in enumerate(macIDs) if val == address][0]
-
-        # if(device.address == 'E4:96:C7:F3:F1:7F'): #assign different UDP ports based on sensor number
-        #     self.UDP_PORT = 5005
-        # elif(device.address == 'F2:35:67:4C:36:32'):
-        #     print('initialized')
-        #     self.UDP_PORT = 5010
-        # elif(device.address == 'DC:37:AF:FC:F6:18'):
-        #     self.UDP_PORT = 5011
-        # else:
-        #     self.UDP_PORT = 5025
+        self.UDP_PORT = [ports[i] for i, val in enumerate(macIDs) if val == self.address][0]
         
-        #self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP packet sending
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP packet sending
 
 
     # once subscribe is called, data_handler linked to device data stream
@@ -84,8 +74,7 @@ class State:
 
         MESSAGE = str(values[1].z)
         
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP packet sending
-        sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, self.UDP_PORT))
+        self.sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, self.UDP_PORT))
        
         # print("time: %s\tacc: (%.4f,%.4f,%.4f),\tgyro; (%.4f,%.4f,%.4f)" 
         #     % (data.contents.epoch, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z))
