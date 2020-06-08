@@ -36,7 +36,7 @@ MBL_MW_GYRO_BMI160_RANGE_125dps= 4       # +/-125 degrees per second
 
 states = []
 ports = [5005, 5010, 5011, 5025]
-macIDs = sys.argv[1:end]
+macIDs = sys.argv[1:]
 
 class State:
     #initialize object for a connected device
