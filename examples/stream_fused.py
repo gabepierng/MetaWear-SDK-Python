@@ -62,12 +62,12 @@ class State:
         fn_wrapper = metacbindings.FnVoid_VoidP_VoidP(processor_created)
 
         # set accelerometer to 100Hz sampling rate and range to +/- 16 g's
-        libmetawear.mbl_mw_acc_set_odr(s.device.board, 100.0)
+        libmetawear.mbl_mw_acc_set_odr(s.device.board, 50.0)
         libmetawear.mbl_mw_acc_set_range(s.device.board, 16.0)
         libmetawear.mbl_mw_acc_write_acceleration_config(s.device.board)
         
         # set gyro to 100Hz sampling rate and +/- 1000 deg/sec. 
-        libmetawear.mbl_mw_gyro_bmi160_set_odr(s.device.board, MBL_MW_GYRO_BMI160_ODR_100Hz)
+        libmetawear.mbl_mw_gyro_bmi160_set_odr(s.device.board, MBL_MW_GYRO_BMI160_ODR_50Hz)
         libmetawear.mbl_mw_gyro_bmi160_set_range(s.device.board, MBL_MW_GYRO_BMI160_RANGE_1000dps)
         libmetawear.mbl_mw_gyro_bmi160_write_config(s.device.board)
 
