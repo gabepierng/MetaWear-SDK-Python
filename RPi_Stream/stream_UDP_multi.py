@@ -48,7 +48,7 @@ class State:
         self.samples = 0
 
         # assign unique port from ports list based on device address's index in macIDs list
-        self.UDP_PORT = [ports[i] for i, val in enumerate(macIDs) if val == self.address][0]
+        self.UDP_PORT = [ports[i] for i, val in enumerate(macIDs) if val == device.address][0]
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP packet sending
 
