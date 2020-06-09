@@ -48,7 +48,7 @@ class State:
         
         # f.write('%.4f,%.4f,%.4f\n' % (values[1].x, values[1].y, values[1].z))
 
-        if( (self.samples == 0) or ((data.contents.epoch - self.sensor_data[self.samples-1][0]) < 1000 ) ): #add initial point, compare current epoch to previous epoch to ensure timestamp not erroneous
+        if( (self.samples == 0) or ((abs(data.contents.epoch - self.sensor_data[self.samples-1][0])) < 50 ) ): #add initial point, compare current epoch to previous epoch to ensure timestamp not erroneous
             self.sensor_data.append([data.contents.epoch, 0, values[0].x, 
                     values[0].y, values[0].z, values[1].x, values[1].y, values[1].z]) 
         else:
