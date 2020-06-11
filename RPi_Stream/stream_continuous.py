@@ -195,16 +195,31 @@ def streamData():
 
 def reset():
     print("Resetting devices")
-    events = []
-    for s in states:
-        e = Event()
-        events.append(e)
+##    events = []
+##    for s in states:
+##        e = Event()
+##        events.append(e)
+##
+##        s.device.on_disconnect = lambda s: e.set()
+##        libmetawear.mbl_mw_debug_reset(s.device.board)
+##
+##    for e in events:
+##        e.wait()
 
-        s.device.on_disconnect = lambda s: e.set()
-        libmetawear.mbl_mw_debug_reset(s.device.board)
+    for s in states: # code from full_reset.py
+        libmetawear.mbl_mw_logging_stop(s.device.board)
+        libmetawear.mbl_mw_logging_clear_entries(s.device.board)
+        libmetawear.mbl_mw_macro_erase_all(s.device.board)
+        libmetawear.mbl_mw_debug_reset_after_gc(s.device.board)
+        print("Erase logger and clear all entries")
+        sleep(1.0)
 
-    for e in events:
-        e.wait()
+        libmetawear.mbl_mw_debug_disconnect(s.device.board)
+        sleep(1.0)
+
+        s.device.disconnect()
+        print("Disconnect")
+        sleep(1.0)
 
 
 while True:
