@@ -34,6 +34,15 @@ MBL_MW_GYRO_BMI160_RANGE_500dps= 2       # +/-500 degrees per second
 MBL_MW_GYRO_BMI160_RANGE_250dps= 3       # +/-250 degrees per second
 MBL_MW_GYRO_BMI160_RANGE_125dps= 4       # +/-125 degrees per second
 
+MBL_MW_BARO_BMP280_STANDBY_TIME_0_5ms= 0    # default, 10ms
+MBL_MW_BARO_BMP280_STANDBY_TIME_62_5ms= 1
+MBL_MW_BARO_BMP280_STANDBY_TIME_125ms= 2
+MBL_MW_BARO_BMP280_STANDBY_TIME_250ms= 3
+MBL_MW_BARO_BMP280_STANDBY_TIME_500ms= 4
+MBL_MW_BARO_BMP280_STANDBY_TIME_1000ms= 5
+MBL_MW_BARO_BMP280_STANDBY_TIME_2000ms= 6
+MBL_MW_BARO_BMP280_STANDBY_TIME_4000ms= 7
+
 states = []
 ports = [5005, 5010, 5011, 5025]
 macIDs = sys.argv[1:]
@@ -46,6 +55,8 @@ class State:
         self.processor = None
         self.sensor_data = []
         self.samples = 0
+        self.counter = 1
+        self.offset = 0
 
         # assign unique port from ports list based on device address's index in macIDs list
         self.UDP_PORT = [ports[i] for i, val in enumerate(macIDs) if val == device.address][0]
@@ -57,6 +68,11 @@ class State:
     # data_handler continuously reads data buffer
     def data_handler(self, ctx, data):
         values = parse_value(data, n_elem = 2)
+        count = cast(data.contents.extra, POINTER(c_uint8)).contents.value
+        self.counter = count + self.offset
+        
+        if(count == 255):      # count = 8 bit, only goes to 255
+            self.offset += 256
         
         if type(values) == float:  
             if self.samples != 0:
@@ -111,29 +127,29 @@ class State:
         libmetawear.mbl_mw_gyro_bmi160_write_config(s.device.board)
 
         # set baro to 10ms (= 100Hz sampling rate)
-        libmetawear.mbl_mw_baro_bosch_set_standby_time(s.device.board, 10.0)
+        #libmetawear.mbl_mw_baro_bosch_set_standby_time(s.device.board, 10.0)
+        libmetawear.mbl_mw_baro_bmp280_set_standby_time(s.device.board, MBL_MW_BARO_BMP280_STANDBY_TIME_125ms)
+        libmetawear.mbl_mw_baro_bosch_write_config(s.device.board)
 
         # get pointers referencing the acc and gyro data signals
         acc = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.device.board)
         gyro = libmetawear.mbl_mw_gyro_bmi160_get_rotation_data_signal(self.device.board)
         baro = libmetawear.mbl_mw_baro_bosch_get_pressure_data_signal(self.device.board)
 
-        signals = (c_void_p * 1)()
+        signals = (c_void_p * 2)()
         signals[0] = gyro
-        #~ signals[1] = acc 
-
-        # //libmetawear.mbl_mw_dataprocessor_accounter_create(signals, None, fn_wrapper)        
+        signals[1] = baro
+     
         # chain two processors together (fuser and accounter) to get timestamped acc+gyro data
         # create a fuser "data processor" which packages the acc and gyro signals into same packets before sending
-        fuser = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_fuser_create(acc, signals, 1, None, fn), resource = "fuser", event = e)
+        fuser = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_fuser_create(acc, signals, 2, None, fn), resource = "fuser", event = e)
         #~ fuser2 = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_fuser_create(baro, fuser, 2, None, fn), resource = "fuser", event = e)
         
         # accounter processor adds correct epoch data to BLE packets, necessary for timestamping stream-mode data
-        accounter = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_accounter_create(fuser, None, fn), resource = "accounter", event = e)
+        accounter = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_accounter_create_count(fuser, None, fn), resource = "accounter", event = e)
 
         # //libmetawear.mbl_mw_datasignal_subscribe(self.processor, None, self.callback) 
         libmetawear.mbl_mw_datasignal_subscribe(accounter, None, self.callback)
-        libmetawear.mbl_mw_datasignal_subscribe(baro, None, self.callback)
 
 
     # begin sampling from gyro and acc signals
