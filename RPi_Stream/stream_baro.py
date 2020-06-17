@@ -1,4 +1,5 @@
 # usage: sudo python3 data_fuser.py [mac1] [mac2] ... [mac(n)]
+# gyro values are still wack, lots of noise at rest and delayed/laggy plotting, will look into it 
 from __future__ import print_function
 from ctypes import c_void_p, cast, POINTER
 from mbientlab.metawear import MetaWear, libmetawear, parse_value, create_voidp
@@ -55,50 +56,46 @@ class State:
         self.processor = None
         self.sensor_data = []
         self.samples = 0
-        self.counter = 1
+        self.counter = 0
         self.offset = 0
+        self.pcount = 0 #for storing previous count value
 
         # assign unique port from ports list based on device address's index in macIDs list
         self.UDP_PORT = [ports[i] for i, val in enumerate(macIDs) if val == device.address][0]
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP packet sending
 
-
     # once subscribe is called, data_handler linked to device data stream
     # data_handler continuously reads data buffer
     def data_handler(self, ctx, data):
-        values = parse_value(data, n_elem = 2)
-        count = cast(data.contents.extra, POINTER(c_uint8)).contents.value
-        self.counter = count + self.offset
+        values = parse_value(data, n_elem = 3)
         
-        if(count == 255):      # count = 8 bit, only goes to 255
+        count = cast(data.contents.extra, POINTER(c_uint8)).contents.value 
+        # count = 8 bit, only goes to 255 
+        # comparing to previous count value to taking into account that packet loss can occur at count = 0 or 255
+        if(count - self.pcount < 0):      
             self.offset += 256
-        
-        if type(values) == float:  
-            if self.samples != 0:
-                self.sensor_data[self.samples-1][8] = values
+        self.counter = count + self.offset
 
-        else:
-            if((self.samples == 0) or ((data.contents.epoch - self.sensor_data[self.samples-1][0]) < 30 )): #add initial point, compare current epoch to previous epoch to ensure timestamp not erroneous
-                self.sensor_data.append([data.contents.epoch, 0, values[0].x, 
-                                        values[0].y, values[0].z, values[1].x, values[1].y, values[1].z,0]) 
+        print(values, count, self.counter, self.samples)
+
+        if((self.samples == 0) or (8 < (data.contents.epoch - self.sensor_data[self.samples-1][0]) < 12 )): #add initial point, compare current epoch to previous epoch to ensure timestamp not erroneous
+            self.sensor_data.append([data.contents.epoch, 0, self.counter, values[0].x, 
+                                        values[0].y, values[0].z, values[1].x, values[1].y, values[1].z, values[2]]) 
                 
-            else:
-                epochEstimate = self.sensor_data[self.samples-1][0] + 10 # use previous epoch to estimate missing timestamp, add 10ms
-                self.sensor_data.append([ epochEstimate, 0, values[0].x, 
-                                            values[0].y, values[0].z, values[1].x, values[1].y, values[1].z,0])
+        else:
+            epochEstimate = self.sensor_data[self.samples-1][0] + 10*(self.counter - self.sensor_data[self.samples-1][2]) # use previous epoch to estimate missing timestamp, add 10ms * the difference of counted packets
+            self.sensor_data.append([ epochEstimate, 0, self.counter, values[0].x, 
+                                        values[0].y, values[0].z, values[1].x, values[1].y, values[1].z, values[2]])
             
-            self.samples += 1
+        self.samples += 1
 
-            MESSAGE = str(values[1].z)
-            
-            # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP packet sending
-            self.sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, self.UDP_PORT))
+        MESSAGE = str(values[1].z)
+
+        # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP packet sending
+        self.sock.sendto(bytes(MESSAGE, "utf-8"), (UDP_IP, self.UDP_PORT))
         
-        print("here:", self.samples)
-        if self.samples != 0:
-            print(self.sensor_data[self.samples-1])
-
+        self.pcount = count 
 
     def setup(self):
         # set BLE connection params (min connect interval, max interval,
@@ -143,7 +140,6 @@ class State:
         # chain two processors together (fuser and accounter) to get timestamped acc+gyro data
         # create a fuser "data processor" which packages the acc and gyro signals into same packets before sending
         fuser = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_fuser_create(acc, signals, 2, None, fn), resource = "fuser", event = e)
-        #~ fuser2 = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_fuser_create(baro, fuser, 2, None, fn), resource = "fuser", event = e)
         
         # accounter processor adds correct epoch data to BLE packets, necessary for timestamping stream-mode data
         accounter = create_voidp(lambda fn: libmetawear.mbl_mw_dataprocessor_accounter_create_count(fuser, None, fn), resource = "accounter", event = e)
@@ -212,9 +208,9 @@ for idx, s in enumerate(states):
 
     # write each sensor's data to a separate .csv file
     with open(filename, 'w') as f:
-        f.write('epoch, elapseds, xacc, yacc, zacc, xgyro, ygyro, zgyro, pressure\n')
+        f.write('epoch, elapseds, count, xacc, yacc, zacc, xgyro, ygyro, zgyro, pressure\n')
         for row in s.sensor_data:
-            f.write('%d,%.3f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f\n' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]))
+            f.write('%d,%.3f,%d, %.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f\n' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
 
     print("Data saved to \'" + filename + "\'\n")
 
