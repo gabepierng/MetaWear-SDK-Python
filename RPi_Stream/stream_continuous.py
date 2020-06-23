@@ -36,6 +36,7 @@ MBL_MW_GYRO_BMI160_RANGE_125dps= 4       # +/-125 degrees per second
 
 states = []
 ports = [5005, 5010, 5011, 5025]
+dongles = ['B8:27:EB:3B:E8:32', '00:1A:7D:DA:71:13'] # personal HCI addresses (on-board and dongle), use hciconfig -a to find your addresses 
 macIDs = sys.argv[1:]
 
 class State:
@@ -144,7 +145,7 @@ class State:
 
 # iterates through MAC addresses provided as arguments in command line and attempts to connect to them
 for i in range(len(argv) - 1):
-    d = MetaWear(argv[i + 1])
+    d = MetaWear(argv[i + 1], hci_mac = dongles[i%2]) # alternates allocating on-board vs dongle HCI address
     d.connect()
     print("Connected to " + d.address)
     states.append(State(d))
@@ -195,31 +196,31 @@ def streamData():
 
 def reset():
     print("Resetting devices")
-##    events = []
-##    for s in states:
-##        e = Event()
-##        events.append(e)
+    events = []
+    for s in states:
+        e = Event()
+        events.append(e)
+
+        s.device.on_disconnect = lambda s: e.set()
+        libmetawear.mbl_mw_debug_reset(s.device.board)
+
+    for e in events:
+        e.wait()
+
+##    for s in states: # code from full_reset.py, could implement in seperate script at beginning when errors occur instead of here
+##        libmetawear.mbl_mw_logging_stop(s.device.board)
+##        libmetawear.mbl_mw_logging_clear_entries(s.device.board)
+##        libmetawear.mbl_mw_macro_erase_all(s.device.board)
+##        libmetawear.mbl_mw_debug_reset_after_gc(s.device.board)
+##        print("Erase logger and clear all entries")
+##        sleep(1.0)
 ##
-##        s.device.on_disconnect = lambda s: e.set()
-##        libmetawear.mbl_mw_debug_reset(s.device.board)
+##        libmetawear.mbl_mw_debug_disconnect(s.device.board)
+##        sleep(1.0)
 ##
-##    for e in events:
-##        e.wait()
-
-    for s in states: # code from full_reset.py
-        libmetawear.mbl_mw_logging_stop(s.device.board)
-        libmetawear.mbl_mw_logging_clear_entries(s.device.board)
-        libmetawear.mbl_mw_macro_erase_all(s.device.board)
-        libmetawear.mbl_mw_debug_reset_after_gc(s.device.board)
-        print("Erase logger and clear all entries")
-        sleep(1.0)
-
-        libmetawear.mbl_mw_debug_disconnect(s.device.board)
-        sleep(1.0)
-
-        s.device.disconnect()
-        print("Disconnect")
-        sleep(1.0)
+##        s.device.disconnect()
+##        print("Disconnect")
+##        sleep(1.0)
 
 
 while True:
