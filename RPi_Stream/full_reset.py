@@ -6,7 +6,7 @@ from mbientlab.metawear.cbindings import *
 from time import sleep
 from threading import Event
 
-device = MetaWear(sys.argv[1])
+device = MetaWear(sys.argv[1], hci_mac = 'B8:27:EB:3B:E8:32') #find on-board address using hciconfig -a, more reliable
 device.connect()
 print("Connected")
 
