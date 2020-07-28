@@ -100,8 +100,6 @@ class State:
 
         signals = (c_void_p * 1)()
         signals[0] = gyro
-
-        # //libmetawear.mbl_mw_dataprocessor_accounter_create(signals, None, fn_wrapper)
         
         # chain two processors together (fuser and accounter) to get timestamped acc+gyro data
         # create a fuser "data processor" which packages the acc and gyro signals into same packets before sending
@@ -211,21 +209,6 @@ def reset():
 
     for e in events:
         e.wait()
-
-    #~ for s in states: # code from full_reset.py
-        #~ libmetawear.mbl_mw_logging_stop(s.device.board)
-        #~ libmetawear.mbl_mw_logging_clear_entries(s.device.board)
-        #~ libmetawear.mbl_mw_macro_erase_all(s.device.board)
-        #~ libmetawear.mbl_mw_debug_reset_after_gc(s.device.board)
-        #~ print("Erase logger and clear all entries")
-        #~ sleep(1.0)
-
-        #~ libmetawear.mbl_mw_debug_disconnect(s.device.board)
-        #~ sleep(1.0)
-
-        #~ s.device.disconnect()
-        #~ print("Disconnect")
-        #~ sleep(1.0)
 
 
 while True:
