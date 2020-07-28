@@ -33,7 +33,7 @@ class State:
 
     def stream_data_handler(self, ctx, data):
         values = parse_value(data)
-        print("time: %s" % (data.contents.epoch), values)
+        #~ print("time: %s" % (data.contents.epoch), values)
         self.stream_gyro.append([data.contents.epoch, 0, values.x, values.y, values.z])
         self.samples+= 1
         
@@ -59,7 +59,7 @@ class State:
             self.processor = pointer
             e.set()
         fn_wrapper = metacbindings.FnVoid_VoidP_VoidP(processor_created)
-#---------------------------------------------------------------------------------------------------------------------
+
         # set accelerometer to 100Hz sampling rate and range to +/- 16 g's
         libmetawear.mbl_mw_acc_set_odr(self.device.board, 100.0) 
         libmetawear.mbl_mw_acc_set_range(self.device.board, 16.0)
@@ -131,7 +131,7 @@ class State:
         
         libmetawear.mbl_mw_logging_stop(self.device.board)
 
-#---------------------------------------------------------------------------------------------------------------------
+    def download(self):
         print("Downloading data")
 
         e = Event()
@@ -152,7 +152,6 @@ class State:
             libmetawear.mbl_mw_logging_download(self.device.board, 0, byref(download_handler))   
             
         e.wait()
-        print("here")       
         
 states = []
 for i in range(len(sys.argv) - 1):
@@ -164,15 +163,19 @@ for i in range(len(sys.argv) - 1):
 for s in states:
     print("Configuring %s" % (s.device.address))
     s.setup()
+
+input("Press enter to start streaming...")
+for s in states:
     s.start()
 
-sleep(2.0)
+input("Press enter to stop streaming...")
 
 for s in states:
     s.stop()
     
-#---------------------------------------------------------------------------------------------------------------------
-
+for s in states:
+    s.download()
+    
 trial_name = input("\nPlease enter trial name: ")
 
 for idx, s in enumerate(states):
@@ -225,4 +228,6 @@ for s in states:
 
 for e in events:
     e.wait()
+    
+
 
